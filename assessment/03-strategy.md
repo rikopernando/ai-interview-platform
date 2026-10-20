@@ -141,6 +141,24 @@ Written before implementation; each maps to automated tests (§7).
 4. **Deadline:** the brief's date had passed on receipt; the work assumes a 1–2 day window.
 5. **Gemini free tier** (20 requests/model/day) limits live verification; the deterministic seed and fake client carry the test burden.
 
-## 10. Pull request shape
+## 10. Frontend design decisions (claimed depth)
+
+The brief asks for "using or extending the design system", so the Rakamin teal/yellow tokens and the shadcn components stay. The extension is an **evidence language**:
+
+| Token | Meaning |
+|---|---|
+| `evidence` (teal, the existing primary) | a level backed by what the candidate said |
+| `required` (slate) | the vacancy's required level |
+| `shortfall` (orange) | a measured gap. Kept apart from red, which stays reserved for errors |
+| `attention` (amber) | missing or weak evidence, legacy reports |
+| `unassessed` (slate, always dashed) | no evidence |
+
+- **One recurring element, the `LevelTrack`.** Five rungs, with the candidate's level filled and the required level underlined. Gap, match and exceed read at a glance without emoji. With no evidence every rung is dashed, so "not assessed" can never be mistaken for L1. It appears on skill cards, table rows and mobile cards.
+- **Level badges use one teal ramp, light to dark.** The old palette gave L1 the same grey as an empty state.
+- **Withheld recommendations come first.** When the gate withholds one, the page opens with what is missing and a direct action for each item. The AI narrative is labelled as AI-written and shown only when the evidence supports it.
+- **Every state is designed.** Loading, not ready, generating (with the retried error), failed with reason, timeout, empty vacancy, nothing assessed, long text (clamped), 390 px mobile, keyboard focus, `aria-live` status and labelled icon buttons.
+- **Copy.** Plain verbs and sentence case. Errors say what happened and what to do; there are no emoji status icons and no uppercase labels.
+
+## 11. Pull request shape
 
 One comprehensive PR (brief Option A), because this is a single theme across both services and splitting it would ship an API contract without its consumer. Commits are layered so the PR reads bottom-up: harness → migration → parser and generator → fit/gap gate → API contract and tenant scope → PDF → web contract → components → pages → tests → demo seed.
