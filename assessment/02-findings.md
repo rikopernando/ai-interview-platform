@@ -38,6 +38,7 @@
 | F-021 | P2 | DI | api | Interview control token hardcoded in repo and prompt (`SYS-TC-7x9k`) | Anyone with the repo can spoof time-control signals in a live interview. | Escalated |
 | F-022 | P2 | MS | api | No rate limits on WebSockets or Gemini-triggering endpoints; unbounded text inputs | Cost abuse and denial of service; oversized input returns 500. | Escalated |
 | F-023 | P2 | DI | infra | Dev/test DB names point at the shared `rakamin_*` databases | `db:test:prepare` would purge the other service's test database. | Fixed (setup) |
+| F-030 | P0 | DI | infra | The API cannot boot in production | Every request fails: the release as shipped would not start. | Fixed (outside the slice: release blocker, needed for CI) |
 | F-024 | P2 | DI | infra | Sample Gemini models are retired; REST client pinned to `v1` | A fresh deploy from the sample config fails every Gemini call. | Escalated |
 | F-025 | P3 | MS | api + web | No seeded login user; signup page is dead code | Local setup can't log in without minting a token by hand. | Escalated |
 | F-026 | P3 | DI | infra | `api/bin/*` committed without the executable bit | `bin/rails` fails with "permission denied". | Escalated |
@@ -67,6 +68,13 @@
 
 ### F-004 · Tenant resolved from client-controlled input — DI · api
 `TenantResolverMiddleware` takes the tenant from the JWT `scheme` **decoded without verification**, else the `X-Tenant-Scheme` header, else the Referer host — `app/middlewares/tenant_resolver_middleware.rb:33-61`. Auth accepts any `Authorization` prefix (`app/auth/authorize_api_request.rb:66`), and nothing compares the verified token's scheme with the resolved tenant. Login picks the scheme from `X-Tenant-Scheme` or the first organization row — `app/controllers/api/v1/authentication_controller.rb:24-28`. **Escalated:** fixing this means redesigning tenant resolution for a database shared with rakamin-api (see Constraint Signal).
+
+### F-030 · The API cannot boot in production — DI · infra
+**Evidence (reproduced on `main`).**
+- `RAILS_ENV=production rails runner` → `NoMethodError: undefined method 'active_job'`. `config/environments/production.rb:34` configures `config.active_job.queue_adapter`, but `config/application.rb` never loads the Active Job railtie, and nothing uses Active Job (workers are plain `Sidekiq::Worker`).
+- With that removed, `rails zeitwerk:check` → `NameError: uninitialized constant AudioWebsocketMiddleware`. The file `app/channels/audio_websocket_middleware.rb` defines `AudioWebSocketMiddleware`; lazy loading in development and test never notices, but production eager-loads.
+
+**Why it went unseen:** development and test never eager-load, and there was no CI. **Fix:** remove the dead Active Job line and map the two file names in `config/initializers/zeitwerk.rb`. **Verified:** a production-mode boot succeeds with `eager_load=true`, `zeitwerk:check` reports "All is good!", and the suite passes with `CI=1`. *Logged here because it was found while setting up CI, after the gap analysis; it is the one fix outside the planned slice.*
 
 ## P1
 
@@ -143,7 +151,7 @@ The core product failure (F-001 + F-005, surfaced by F-002) crosses **both servi
 1. **Shared database with rakamin-api.** App tables live in an `ai_interview` schema inside rakamin-api's database; `organizations` is owned by the other service, yet a migration in this repo creates it; `schema_migrations` sits in `public`. Any migration or test-harness work risks the other service. *Decision needed:* who owns migrations on the shared database, and should this service get its own database?
 2. **Tenant isolation is broken at the middleware, not per endpoint** (F-003, F-004). Patching controllers one by one won't close it. *Decision needed:* the tenant must come from a verified claim and be enforced on every model — a cross-cutting change that needs an owner and a security review.
 3. **The product spec lives only in the GitHub wiki, and the code disagrees with it** (spec IDs N2–N14 in comments). I could not confirm intended behavior for "not assessed", confidence, or recommendations. *Assumption made:* a rating must be backed by evidence; where the spec is silent, the system must say so rather than guess.
-4. **No tests, no CI, and an LLM in the critical path.** Every rating depends on free-form model output. Without a harness that stubs Gemini, no change to scoring can be verified. This PR builds that harness first.
+4. **No tests, no CI, and an LLM in the critical path.** Found later, and the clearest proof: the codebase as handed over **cannot boot in production** (F-030), and nothing would have caught it. Every rating depends on free-form model output. Without a harness that stubs Gemini, no change to scoring can be verified. This PR builds that harness first.
 5. **External AI capacity is a production dependency.** The free tier allows 20 requests/model/day; one interview makes ~20 coverage calls; we observed 13 × 503 in one session with retries silently disabled (F-008). *Decision needed:* paid tier and quota monitoring before any client rollout.
 6. **Candidate data obligations under UU PDP** (F-014, F-015) need legal and product sign-off — consent copy, retention period, and the cross-border transfer disclosure are not engineering decisions alone.
 7. **Brief ambiguity.** The deadline in the brief ("Wednesday 19 August") had already passed when the brief was received. *Assumption made:* a 1–2 day effort window, documented in the report.
