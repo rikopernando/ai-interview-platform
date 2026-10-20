@@ -51,8 +51,8 @@ module Portfolios
     end
 
     def matches?(entry, skill)
-      id = entry['skill_id'].to_s.strip.downcase
-      (skill.skill_id.present? && id == skill.skill_id.downcase) || normalize(entry['skill_label']) == normalize(skill.skill_label)
+      same_id = skill.skill_id.present? && normalize(entry['skill_id']) == normalize(skill.skill_id)
+      same_id || normalize(entry['skill_label']) == normalize(skill.skill_label)
     end
 
     # Unmatched or discovered entries: assessed only, first entry per label, no clash with configured skills.
