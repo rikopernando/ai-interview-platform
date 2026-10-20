@@ -88,7 +88,9 @@ export default function ComparisonTable({ comparisons }: ComparisonTableProps) {
           <li key={c.skill_label} className="space-y-2 py-3">
             <div className="flex items-start justify-between gap-3">
               <span className="break-words font-medium">{c.skill_label}</span>
-              <ResultText comparison={c} />
+              <span className="shrink-0 whitespace-nowrap">
+                <ResultText comparison={c} />
+              </span>
             </div>
             <LevelTrack level={c.candidate_level} required={c.expected_level} highlightShortfall />
             <p className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
