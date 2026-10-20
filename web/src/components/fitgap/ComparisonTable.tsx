@@ -67,7 +67,7 @@ export default function ComparisonTable({ comparisons }: ComparisonTableProps) {
               <th scope="row" className="max-w-[16rem] break-words py-3 pr-3 text-left font-medium">
                 {c.skill_label}
               </th>
-              <td className="px-3 py-3 tabular-nums text-muted-foreground">{levelLabel((c as unknown as { required_level: number }).required_level) /* SEEDED FAULT: original field name */}</td>
+              <td className="px-3 py-3 tabular-nums text-muted-foreground">{levelLabel(c.expected_level)}</td>
               <td className="px-3 py-3">
                 <CandidateLevel comparison={c} />
               </td>
