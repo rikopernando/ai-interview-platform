@@ -51,6 +51,17 @@ async function capture(page: Page, name: string, url: string, ready: string, vie
   await page.screenshot({ path: `${OUT}/${name}-${viewport}.png`, fullPage: true });
 }
 
+/** For the PDF report: just the page's content column, top portion, at desktop width. */
+async function captureCrop(page: Page, name: string) {
+  const box = await page.locator("main > div").first().boundingBox();
+  if (!box) throw new Error(`${name}: content column not found`);
+  await page.screenshot({
+    path: `${OUT}/report/${name}.png`,
+    fullPage: true,
+    clip: { x: box.x - 16, y: Math.max(box.y - 16, 0), width: box.width + 32, height: Math.min(box.height + 32, 1000) },
+  });
+}
+
 let ids: Ids;
 test.beforeAll(async () => {
   ids = await demoIds();
@@ -63,6 +74,7 @@ for (const viewport of ["desktop", "mobile"] as const) {
   test.describe(viewport, () => {
     test("portfolio states", async ({ page }) => {
       await capture(page, "portfolio-mixed-evidence", portfolio("Andi"), "3 of 4", viewport);
+      if (viewport === "desktop") await captureCrop(page, "portfolio-mixed-evidence");
       await capture(page, "portfolio-fully-evidenced", portfolio("Budi"), "4 of 4", viewport);
       await capture(page, "portfolio-nothing-assessed", portfolio("Citra"), "0 of 4", viewport);
       await capture(page, "portfolio-generating", portfolio("Rina"), "Retrying automatically", viewport);
@@ -72,7 +84,9 @@ for (const viewport of ["desktop", "mobile"] as const) {
 
     test("fit/gap states", async ({ page }) => {
       await capture(page, "fitgap-recommendation-withheld", fitgap("Andi"), "No recommendation yet", viewport);
+      if (viewport === "desktop") await captureCrop(page, "fitgap-recommendation-withheld");
       await capture(page, "fitgap-recommendation", fitgap("Budi"), "Recommendation", viewport);
+      if (viewport === "desktop") await captureCrop(page, "fitgap-recommendation");
       await capture(page, "fitgap-interview-ended-early", fitgap("Citra"), "ended early", viewport);
       await capture(page, "fitgap-vacancy-without-skills", fitgap("Andi", ids.emptyVacancy), "no required skills", viewport);
     });
@@ -85,6 +99,10 @@ for (const viewport of ["desktop", "mobile"] as const) {
       const panel = page.getByText("Rate this skill yourself").locator("xpath=ancestor::div[contains(@class,'rounded-md')][1]");
       await panel.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${OUT}/override-rate-manually-${viewport}.png` }); // form only, not saved
+      if (viewport === "desktop") {
+        const card = panel.locator("xpath=ancestor::div[contains(@class,'rounded-xl') or contains(@class,'rounded-lg')][1]");
+        await card.screenshot({ path: `${OUT}/report/override-rate-manually.png` });
+      }
     });
   });
 }
