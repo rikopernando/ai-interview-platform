@@ -45,17 +45,7 @@
       "count": 2
     }
   },
-  "src/pages/fitgap/FitGapReportPage.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "src/pages/monitor/LiveMonitorPage.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/pages/portfolio/PortfolioPage.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
