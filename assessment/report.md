@@ -2,7 +2,7 @@
 
 **Case study: Fullstack Product Engineer · Rakamin AI Interview Platform**
 
-- **Pull request:** `TODO: PR link`
+- **Pull request:** https://github.com/rakamindev/ai-interview-platform/pull/176 (seeded-fault history: https://github.com/rikopernando/ai-interview-platform/commits/scratch/seeded-fault)
 - **Video walkthrough:** `TODO: video link (3–5 min)`
 - **Claimed depth: frontend-heavy.** The report UX is rebuilt around evidence, with every state handled and 44 component/page tests. The backend module is smaller but complete: migration, scoring rules, evidence gate, API contract, 121 specs.
 - **Detail documents** (in the repository): `assessment/01-context.md`, `02-findings.md`, `03-strategy.md`, `04-verification.md`, `ai-notes.md`
